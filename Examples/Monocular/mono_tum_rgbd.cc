@@ -1,18 +1,19 @@
 /**
-File created to asses the real TUM monocular. 
-The original tum_mono.cc , was intended to be used with the  RGBD monocular TUM dataset: 
-https://cvg.cit.tum.de/data/datasets/rgbd-dataset and this was misleading. 
-
-The RGB-D implementation was moved in another file: mono_tum_rgbd.cc 
-
-This implementation expect the dataset format of the TUM mono-dataset: 
-(https://cvg.cit.tum.de/data/datasets/mono-dataset) 
-
-Note: The expected .yaml config file is the one commonly used for orbslam. The name is misleading:
-no reason to have a special config for the tum dataset version they use the same format.  
-Use the config .yaml file that you use for other datasets i.e: euroc.
-
-
+* This file is part of ORB-SLAM3
+*
+* Copyright (C) 2017-2021 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
+* Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
+*
+* ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+* License as published by the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+* the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along with ORB-SLAM3.
+* If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include<iostream>
@@ -26,23 +27,23 @@ Use the config .yaml file that you use for other datasets i.e: euroc.
 
 using namespace std;
 
-void LoadImages(const string &strFile, const string &path_images,  vector<string> &vstrImageFilenames,
+void LoadImages(const string &strFile, vector<string> &vstrImageFilenames,
                 vector<double> &vTimestamps);
 
 int main(int argc, char **argv)
 {
     if(argc != 4)
     {
-        cerr << endl << "Usage: ./mono_tum <your_path>/ORBvoc.txt <your_path>/TUM.yaml path_to_sequence/" << endl;
+        cerr << endl << "Usage: ./mono_tum path_to_vocabulary path_to_settings path_to_sequence" << endl;
         return 1;
     }
 
     // Retrieve paths to images
     vector<string> vstrImageFilenames;
     vector<double> vTimestamps;
-    string strFile = string(argv[3])+"/times.txt";
-    string path_images = string("/images");
-    LoadImages(strFile, path_images, vstrImageFilenames, vTimestamps);
+    string strFile = string(argv[3])+"/rgb.txt";
+    cout << "strFile: " << strFile << endl << endl;
+    LoadImages(strFile, vstrImageFilenames, vTimestamps);
 
     int nImages = vstrImageFilenames.size();
 
@@ -154,12 +155,16 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void LoadImages(const string &strFile, const string &path_images,  vector<string> &vstrImageFilenames,
-                vector<double> &vTimestamps){
+void LoadImages(const string &strFile, vector<string> &vstrImageFilenames, vector<double> &vTimestamps)
+{
     ifstream f;
     f.open(strFile.c_str());
-    // The expected column format is: 00000 1463226057.0243203640 0.1566525251 (image_name timestamp exposure_time [ms])
-    // The correspondin image 
+
+    // skip first three lines
+    string s0;
+    getline(f,s0);
+    getline(f,s0);
+    getline(f,s0);
 
     while(!f.eof())
     {
@@ -169,14 +174,12 @@ void LoadImages(const string &strFile, const string &path_images,  vector<string
         {
             stringstream ss;
             ss << s;
-            double timestamp;
-            string image_path, image_name;
-            ss >> image_name; 
-	    image_path = path_images + "/" + image_name + ".jpg";
-            ss >> timestamp;
-            vTimestamps.push_back(timestamp);
-            vstrImageFilenames.push_back(image_path);
-            ss.clear();
+            double t;
+            string sRGB;
+            ss >> t;
+            vTimestamps.push_back(t);
+            ss >> sRGB;
+            vstrImageFilenames.push_back(sRGB);
         }
     }
 }
