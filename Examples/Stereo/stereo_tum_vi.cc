@@ -262,16 +262,19 @@ int main(int argc, char **argv)
 }*/
 
 void LoadImages(const string &strPathLeft, const string &strPathRight, const string &strPathTimes,
-                vector<string> &vstrImageLeft, vector<string> &vstrImageRight, vector<double> &vTimeStamps)
+                  vector<string> &vstrImageLeft, vector<string> &vstrImageRight, vector<double> &vTimeStamps)
 {
     ifstream fTimes;
-    cout << strPathLeft << endl;
-    cout << strPathRight << endl;
-    cout << strPathTimes << endl;
     fTimes.open(strPathTimes.c_str());
     vTimeStamps.reserve(5000);
     vstrImageLeft.reserve(5000);
     vstrImageRight.reserve(5000);
+
+    auto fileExists = [](const string& name) {
+        ifstream f(name.c_str());
+        return f.good();
+    };
+
     while(!fTimes.eof())
     {
         string s;
@@ -283,10 +286,40 @@ void LoadImages(const string &strPathLeft, const string &strPathRight, const str
                 continue;
 
             int pos = s.find(' ');
-            string item = s.substr(0, pos);
+            string item = s.substr(0, pos); // Questo è il timestamp/nome base del file
 
-            vstrImageLeft.push_back(strPathLeft + "/" + item + ".png");
-            vstrImageRight.push_back(strPathRight + "/" + item + ".png");
+            string leftPath, rightPath;
+
+            // Cerca l'immagine sinistra (prima .png, poi .jpg)
+            string leftPng = strPathLeft + "/" + item + ".png";
+            if (fileExists(leftPng)) {
+                leftPath = leftPng;
+            } else {
+                string leftJpg = strPathLeft + "/" + item + ".jpg";
+                if (fileExists(leftJpg)) {
+                    leftPath = leftJpg;
+                } else {
+                    cerr << "Attenzione: Immagine sinistra non trovata per il timestamp: " << item << endl;
+                    continue;
+                }
+            }
+
+            // Cerca l'immagine destra (prima .png, poi .jpg)
+            string rightPng = strPathRight + "/" + item + ".png";
+            if (fileExists(rightPng)) {
+                rightPath = rightPng;
+            } else {
+                string rightJpg = strPathRight + "/" + item + ".jpg";
+                if (fileExists(rightJpg)) {
+                    rightPath = rightJpg;
+                } else {
+                    cerr << "Attenzione: Immagine destra non trovata per il timestamp: " << item << endl;
+                    continue;
+                }
+            }
+
+            vstrImageLeft.push_back(leftPath);
+            vstrImageRight.push_back(rightPath);
 
             double t = stod(item);
             vTimeStamps.push_back(t/1e9);
